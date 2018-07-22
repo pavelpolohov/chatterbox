@@ -83,47 +83,6 @@ class WebChat(Namespace):
             },
         }, broadcast=True)
 
-    def on_private_message(self, message):
-        user = get_username(request.sid)
-        # if there is no chat state between two users, append to the object
-        if message['user'] not in all_chat[user]:
-            emit('message_response', {
-                'type': 'private',
-                'message': '',
-                'data': {
-                    'user': message['user'],
-                },
-            })
-            all_chat[user].append(message['user'])
-
-    def on_private_send(self, message):
-        user = get_username(request.sid)
-        # if there is no chat state between two users, open new chat
-        if user not in all_chat[message['friend']]:
-            all_chat[message['friend']].append(user)
-            emit('message_response', {
-                'type': 'new_private',
-                'message': '',
-                'data': {
-                    'user': user
-                }
-            }, room=users[message['friend']])
-
-        # send the message to the other
-        private_act = 'pm'
-
-        # if type is disconnect, will send all disconnected user message
-        if 'act' in message:
-            private_act = 'disconnect'
-        emit('message_response', {
-            'type': 'private_message',
-            'act': private_act,
-            'data': {
-                'text': message['text'],
-                'from': user,
-            }
-        }, room=users[message['friend']])
-
     def on_room_send(self, message):
         user = get_username(request.sid)
 

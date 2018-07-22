@@ -235,21 +235,15 @@
 				socket.on('message_response', function(msg){
 					if ('type' in msg) {
 						// if there is user click for private message or there is new private message from other user
-						if (msg.type == 'private' || msg.type == 'new_private' || msg.type == 'open_room') {
+						if (msg.type == 'open_room') {
 
-							if (msg.type == 'open_room') {
+
 								var message_id = 'rooms_' + msg.data.room;
 								var message_header = 'Room: ' + msg.data.room;
 								var message_body = 'rooms_' + my_username + '_' + msg.data.room;
 								var message_input = 'rooms_message_' + msg.data.room;
 								var class_close = 'close-room';
-							} else {
-								var message_id = msg.data.user;
-								var message_header = msg.data.user;
-								var message_body = my_username + '_' + msg.data.user;
-								var message_input = 'message_' + msg.data.user;	
-								var class_close = 'close-chat';
-							}
+
 
 							var add_chat_html = `
 								<div class="col-md-4" id="`+message_id+`">
@@ -273,15 +267,7 @@
 									</div>
 								</div>`;
 								$('#chat').append(add_chat_html);
-						} else if (msg.type == 'private_message') {
-							// receive message from other
-							if (msg.act == 'pm') {
-	                        	var received_message = '<div class="clearfix" style="height: 33px;"><blockquote class="you pull-left"><strong>'+msg.data.from+': </strong>'+msg.data.text+'</blockquote></div>';
-							} else {
-								var received_message = '<div class="clearfix" style="height: 33px;"><blockquote class="me" style="text-align: center; font-size: 10px; font-style: italic; background-colour: rgb(244, 66, 155); border-right: 3px solid #f4429b !important; border-left: 3px solid #f4429b !important;">'+msg.data.text+'</blockquote></div>';
-							}
-	                		$('#'+my_username+'_'+msg.data.from).append(received_message);
-	                	} else if (msg.type == 'room_message') {
+						}  else if (msg.type == 'room_message') {
 							// receive message from room
 							var user_from = '';
 							var class_text = '';
@@ -338,13 +324,6 @@
 					room_state = room_name;
 					$('#room_now').text('('+room_state+')');
 
-					return false;
-				});
-
-				// event when click username to open chat
-				$(document).on('click', '.user-list', function(){
-					var user_name = $(this).data('id');
-					socket.emit('private_message', {user: user_name});
 					return false;
 				});
 
