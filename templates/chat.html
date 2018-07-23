@@ -48,7 +48,7 @@
 						<thead>
 							<tr>
 								<th>Rooms</th>
-								<th><button type="button" class="form-control btn btn-default" style="width: 50%; float: right;" data-toggle="modal" data-target="#RoomModal"/>Create</button></th>
+								<th><button type="button" class="form-control btn btn-default" style="width: 50%; float: right;" data-toggle="modal" data-target="#RoomModal" onclick="openModal();">Create</button></th>
 							</tr>
 						</thead>
 						<tbody id="rooms">
@@ -80,7 +80,7 @@
 		</div>
 
 		<!-- Start Create Room Modal -->
-		<div class="modal fade" id="RoomModal" role="dialog">
+		<div class="is-hidden modal-overlay" id="RoomModal" role="dialog">
 			<div class="modal-dialog">
 				<div class="modal-content">
 					<div class="modal-header">
@@ -99,7 +99,7 @@
 					</div>
 
 					<div class="modal-footer">
-						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-default" data-dismiss="modal" id="btn-close">Close</button>
 					</div>
 
 				</div>
@@ -107,14 +107,21 @@
 		</div>
 		<!-- End Create Room Modal -->
 
-		<script type="text/javascript" src="{{url_for('static', filename='js/jquery.3-1-1.min.js')}}"></script>
 		<script type="text/javascript" src="{{url_for('static', filename='js/socket.io.min.js')}}"></script>
-		<script type="text/javascript">
-			var room_state = '';
-			var user_chat_array = [];
 
-			$(document).ready(function() {
-				namespace = "/chat";
+
+        <script type="text/javascript">
+             function ready(fn) {
+              if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading"){
+                fn();
+              } else {
+                document.addEventListener('DOMContentLoaded', fn);
+              }
+            }
+            var room_state = '';
+			var user_chat_array = [];
+            ready(function(){
+                namespace = "/chat";
 
 				// init variabel
 				var base_url = location.protocol + '//' + document.domain + ':' + location.port;
@@ -127,53 +134,62 @@
 					socket.emit('register', {user: my_username});
 				});
 
-
 				// function to check room is exist or not
 				function check_room(room_name) {
 					var check_room_url = base_url + "/check/room/" + room_name;
-					$.get(check_room_url, function(data) {
-						if (data == 0) {
+					fetch(check_room_url)
+                        .then(function(response) {
+                        return response.json();
+                         })
+                        .then(function(data){
+                            if (data == 0) {
 							return false;
 						}
 						return true;
-					});
+                        });
+
 				}
+
 
 				// users connect and disconnect
 				socket.on('user_response', function(msg){
 					if (msg.type == 'connect') {
 						// refresh when there is new connected or disconnected users
 						var user_list = '';
-						$.each(msg.data.users, function(key, value){
-							if (key == my_username) {
+						for(var key of Object.keys(msg.data.users)){
+						    if (key == my_username) {
 								user_list += '<tr><td><a href="#"><span class="glyphicon glyphicon-user"></span> '+ key +' (You)</td></tr>';
 							} else {
 								user_list += '<tr><td><a href="#" class="user-list" data-id="'+key+'"><span class="glyphicon glyphicon-user"></span> '+ key +' </td></tr>';
 							}
-						});
-						// refresh user list
-						$('#users').html(user_list);
+                        }
 
-						// refresh room list
+
+						//refresh user list
+						document.querySelector('#users').innerHTML=user_list;
+
 						var room_list = '';
-						$.each(msg.data.rooms, function(key, value){
-							var join_button = '';
-							if (msg.data.rooms[key].admin != my_username){
-								if ($.inArray(my_username, msg.data.rooms[key].users) == -1) {
-									join_button += '<button type="button" class="form-control btn btn-default join_room" style="width: 50%; float: right;" data-id="'+key+'">JOIN</button>';	
+
+						for (var key of Object.keys(msg.data.rooms)){
+						    var join_button = '';
+						    if (msg.data.rooms[key].admin != my_username){
+
+						        if (msg.data.rooms[key].users.indexOf(my_username) == -1) {
+									join_button += '<button type="button" class="form-control btn btn-default join_room" style="width: 50%; float: right;" data-id="'+key+'">JOIN</button>';
 								}
+
 							}
-
 							room_list += '<tr><td><a class="room_list" data-id="'+key+'" href="#"><span class="glyphicon glyphicon-comment"></span> '+ key +' ('+ msg.data.rooms[key].users.length  +') </td><td>'+join_button+'</td></tr>';
-						});
-						$('#rooms').html(room_list);
 
-						// append feed message
-						$('#feed').append('<tr><td>'+ msg.message +'</td></tr>');	
+                        }
+
+						document.querySelector('#rooms').innerHTML = room_list;
+						document.querySelector('#feed').insertAdjacentHTML('beforeend','<tr><td>'+ msg.message +'</td></tr>');
+
 					} else if (msg.type == 'exists') {
 						window.location.href = base_url + "/?exists=1";
 					}
-					
+
 				});
 
 				// feed response
@@ -182,32 +198,37 @@
 						// if message type is rooms, refresh room list
 						if (msg.type == 'rooms') {
 							var room_list = '';
-							$.each(msg.data, function(key, value){
-								var join_button = '';
+							for(var key of Object.keys(msg.data)){
+							    var join_button = '';
 								if (msg.data[key].admin != my_username){
-									if ($.inArray(my_username, msg.data[key].users) == -1) {
+								    if (msg.data[key].users.indexOf(my_username) == -1) {
 										join_button += '<button type="button" class="form-control btn btn-default join_room" style="width: 50%; float: right;" data-id="'+key+'">JOIN</button>';
 									}
-								}
 
+								}
 								room_list += '<tr><td><a class="room_list" data-id="'+key+'" href="#"><span class="glyphicon glyphicon-comment"></span> '+ key +' ('+ msg.data[key].users.length +') </td><td>'+join_button+'</td></tr>';
-							});
-							$('#rooms').html(room_list);	
+
+                            }
+
+							document.querySelector('#rooms').innerHTML=room_list;
 						} else if (msg.type == 'room_users') {
 							var room_user_list = '';
-							$.each(msg.data, function(key, value){
-								if (value == my_username) {
+							for(var key of Object.keys(msg.data)){
+							    var value = msg.data[key];
+							    if (value == my_username) {
 									room_user_list += '<tr><td><a href="#"><span class="glyphicon glyphicon-user"></span> '+ value +' (You)</td></tr>';
 								} else {
 									room_user_list += '<tr><td><a href="#" class="user-list" data-id="'+value+'"><span class="glyphicon glyphicon-user"></span> '+ value +' </td></tr>';
 								}
-							});
-							// refresh room user list
-							$('#room_users').html(room_user_list);							
+
+                            }
+
+							document.querySelector('#room_users').innerHTML=room_user_list;
 						} else if (msg.type == 'new_joined_users') {
 							// welcome message
 							var received_message = '<div class="clearfix" style="height: 33px;"><blockquote class="me" style="text-align: center; font-size: 10px; font-style: italic; background-colour: rgb(244, 66, 155); border-right: 3px solid #f4429b !important; border-left: 3px solid #f4429b !important;">'+msg.welcome_message+'</blockquote></div>';
-	                		$('#rooms_'+my_username+'_'+msg.room).append(received_message);
+
+							document.querySelector('#rooms_'+my_username+'_'+msg.room).insertAdjacentHTML('beforeend',received_message);
 
 							// if user room state, refresh the room user list
 							if (room_state == msg.room || my_username == msg.user_action) {
@@ -220,13 +241,14 @@
 								{
 									socket.emit('get_room_users', {room: msg.room});
 								} else if (msg.act == 'close') {
-									$('#room_users').html('');
+								    document.querySelector('#room_users').innerHTML='';
+
 								}
 							}
 						}
 
 						if (msg.message.length > 0) {
-							$('#feed').append('<tr><td>'+ msg.message +'</td></tr>');
+						    document.querySelector('#feed').insertAdjacentHTML('beforeend', '<tr><td>'+ msg.message +'</td></tr>');
 						}
 					}
 				});
@@ -248,8 +270,8 @@
 							var add_chat_html = `
 								<div class="col-md-4" id="`+message_id+`">
 									<div class="panel panel-primary">
-										<div class="panel-heading"><b> `+message_header+` </b> 
-											<span class="glyphicon glyphicon-remove pull-right `+class_close+`" style="cursor:pointer" data-id="`+message_id+`"; return false"></span> 
+										<div class="panel-heading"><b> `+message_header+` </b>
+											<span class="glyphicon glyphicon-remove pull-right `+class_close+`" style="cursor:pointer" data-id="`+message_id+`"; return false"></span>
 										</div>
 										<div id="`+message_body+`" class="panel-body" style="height: 300px;overflow:auto; }">
 										</div>
@@ -257,7 +279,7 @@
 											<form id="`+message_id+`" action="#" class="form-inline message-form">
 												<input type="hidden" data-id="`+message_id+`" id="sid" name="sid">
 												<div class="form-group">
-													<textarea style="width:280px;" placeholder="Type a message..." rows="1" name="`+message_input+`" id="`+message_input+`"></textarea>
+													<textarea style="width:280px;" placeholder="Type a message..." rows="1" name="`+message_input+`" id="`+message_input+`"  ></textarea>
 												</div>
 												<div class="form-group">
 													<input class="btn btn-primary" type="submit" value="Send">
@@ -266,7 +288,7 @@
 										</div>
 									</div>
 								</div>`;
-								$('#chat').append(add_chat_html);
+								document.querySelector('#chat').insertAdjacentHTML('beforeend',add_chat_html);
 						}  else if (msg.type == 'room_message') {
 							// receive message from room
 							var user_from = '';
@@ -280,102 +302,164 @@
 								user_from = msg.data.from;
 								class_text = "you pull-left";
 							}
-							var received_message = '<div class="clearfix" style="height: 33px;"><blockquote class="'+class_text+'"><strong>'+user_from+':</strong> '+msg.data.text+'</blockquote></div>';	
-							
-	                		$('#rooms_'+my_username+'_'+msg.data.room).append(received_message);
+							var received_message = '<div class="clearfix" style="height: 33px;"><blockquote class="'+class_text+'"><strong>'+user_from+':</strong> '+msg.data.text+'</blockquote></div>';
+
+	                		document.querySelector('#rooms_'+my_username+'_'+msg.data.room).insertAdjacentHTML('beforeend',received_message);
 						} else if (msg.type == 'room_feed') {
 							var received_message = '<div class="clearfix" style="height: 33px;"><blockquote class="me" style="text-align: center; font-size: 10px; font-style: italic; background-colour: rgb(244, 66, 155); border-right: 3px solid #f4429b !important; border-left: 3px solid #f4429b !important;">'+msg.data.text+'</blockquote></div>';
-	                		$('#rooms_'+my_username+'_'+msg.data.room).append(received_message);
+	                		document.querySelector('#rooms_'+my_username+'_'+msg.data.room).insertAdjacentHTML('beforeend',received_message);
 						}
 					}
 				})
 
-				// on room create
-				$(document).on('submit', 'form#room_create', function(event){
-					var room_name = $('#room_name').val();
+                // on room create
+
+                document.querySelector('form#room_create').onsubmit = function(){
+				    var room_name = document.querySelector('#room_name').value;
 					var room_exist = check_room(room_name);
+
 					if (room_exist) {
 						alert('Room is exist, please use another name');
 					} else {
-						socket.emit('create_room', {room: room_name})
-						$('#room_name').val('');
-						$('#RoomModal').modal('hide');
+						socket.emit('create_room', {room: room_name});
+						document.querySelector('#room_name').value='';
+                        window.closeModal();
+
 						socket.emit('get_room_users', {room: room_name});
 						room_state = room_name;
-						$('#room_now').text('('+room_state+')');
+						document.querySelector('#room_now').textContent = '('+room_state+')';
 					}
-					return false;
-				});
 
-				// on get room users
-				$(document).on('click', '.room_list', function(){
-					var room_name = $(this).data('id');
-					socket.emit('get_room_users', {room: room_name});
-					room_state = room_name;
-					$('#room_now').text('('+room_state+')');
-					return false;
-				});
-
-				// event when joining a room
-				$(document).on('click', '.join_room', function(){
-					var room_name = $(this).data('id');
-					socket.emit('join_room', {room: room_name});
-					socket.emit('get_room_users', {room: room_name});
-					room_state = room_name;
-					$('#room_now').text('('+room_state+')');
 
 					return false;
-				});
+                };
 
-				// event when close chat
-				$(document).on('click', '.close-chat', function(){
-					var user_name = $(this).data('id');
-					$('#'+user_name).remove();
-					socket.emit('close_chat', {user: user_name});
-					return false;
-				});
 
-				// event when close room
-				$(document).on('click', '.close-room', function(){
-					var room_name = $(this).data('id');
-					$('#'+room_name).remove();
-					socket.emit('close_room', {room: room_name});
-					return false;
-				});
+                // on get room users
+                document.querySelector('#rooms').addEventListener('click', function(){
+                    if (event.target.classList.contains('room_list')) {
+                        // Do something
+                        var room_name = event.target.dataset.id;
+                        console.log(room_name);
+                        socket.emit('get_room_users', {room: room_name});
+                        room_state = room_name;
+                        document.querySelector('#room_now').textContent = '('+room_state+')';
+                        return false;
 
-				// if press enter, send message
-				$(document).on('keypress', '.message-form', function(event) {
-	                if (event.which == 13) {
-	                    event.preventDefault();
-	                    $(".message-form").submit();
-	                }
-	            })
-				// event when submit message
-				$(document).delegate('form', 'submit', function(event){
-					var $form = $(this);
-					var friend_id = $form.attr('id');
-					if (friend_id != 'room_create') {
-						var text = $form[0][1].value;
+                     }
+                     else if(event.target.classList.contains('join_room')){
+                        var room_name = event.target.dataset.id;
+                        console.log(room_name);
+                        socket.emit('join_room', {room: room_name});
+                        socket.emit('get_room_users', {room: room_name});
+                        room_state = room_name;
+                        document.querySelector('#room_now').textContent='('+room_state+')';
 
+                        return false;
+                    }
+
+
+                });
+
+                document.querySelector('#chat').addEventListener('click', function(){
+                    if (event.target.classList.contains('close-chat')){
+                         // event when close chat
+                        var user_name = event.target.dataset.id;
+                        document.querySelector('#'+user_name).remove();
+                        socket.emit('close_chat', {user: user_name});
+                        return false;
+                    } else if (event.target.classList.contains('close-room')){
+                        	// event when close room
+                        var room_name = event.target.dataset.id;
+                        document.querySelector('#'+room_name).remove();
+                        socket.emit('close_room', {room: room_name});
+                        return false;
+                    }
+                });
+
+                document.querySelector('#chat').addEventListener('submit', function(){
+                    if (event.target.classList.contains('message-form')){
+                        event.preventDefault();
+                    var form = event.target || event.srcElement;
+                    var friend_id = form.getAttribute('id');
+
+                    if (friend_id != 'room_create') {
+
+						var text = form.elements[1].value;
 						// submit action for room message
 						if (friend_id.match("^rooms_")) {
 			                var temp_room_name = friend_id.split("_");
 			                temp_room_name.shift();
 			                var room_name = temp_room_name.join("_");
-			                $('#rooms_message_'+room_name).val('');
+			                document.querySelector('#rooms_message_'+room_name).value = '';
 							socket.emit('room_send', {friend: friend_id, text: text});
-						} else {
-							// submit action for private message
-			            	var sent_message = '<div class="clearfix" style="height: 33px;"><blockquote class="me pull-right"><strong>'+my_username+': </strong>'+text+'</blockquote></div>';
-			                $('#'+my_username+'_'+friend_id).append(sent_message);
-			                $('#message_'+friend_id).val('');
-							socket.emit('private_send', {friend: friend_id, text: text});	
 						}
 					}
-					return false;
-				})
-			})
-		</script>
-		<script type="text/javascript" src="{{url_for('static', filename='js/bootstrap.js')}}"></script>
+					return false
+                    }
+                });
+
+				// if press enter, send message
+                document.querySelector('#chat').addEventListener('keydown', function(){
+                    if (event.target.tagName.toLowerCase() ==='textarea'){
+
+                        if (event.keyCode === 13) {
+                            var textarea = event.target || event.srcElement;
+                            var form = textarea.closest('form');
+                            var friend_id = form.getAttribute('id');
+                                console.log(friend_id);
+                            if (friend_id != 'room_create') {
+
+                                var text = form.elements[1].value;
+                                // submit action for room message
+                                if (friend_id.match("^rooms_")) {
+                                    var temp_room_name = friend_id.split("_");
+                                    temp_room_name.shift();
+                                    var room_name = temp_room_name.join("_");
+                                    document.querySelector('#rooms_message_'+room_name).value = '';
+                                    socket.emit('room_send', {friend: friend_id, text: text});
+                                }
+                            }
+
+                        return false;
+                    }
+                }});
+
+
+
+
+
+            });
+
+            //for showing modal
+                class Modal {
+                      constructor(overlay) {
+                        this.overlay = overlay;
+                        const closeButton = overlay.querySelector('.close');
+                        closeButton.addEventListener('click', this.close.bind(this));
+                        document.querySelector('#btn-close').addEventListener('click', this.close.bind(this));
+                        overlay.addEventListener('click', e => {
+                          if (e.srcElement.id === this.overlay.id) {
+                            this.close();
+                          }
+                        });
+                      }
+                      open() {
+                        this.overlay.classList.remove('is-hidden');
+                      }
+
+                      close() {
+                        this.overlay.classList.add('is-hidden');
+                      }
+                    }
+
+                const modal = new Modal(document.querySelector('.modal-overlay'));
+
+                window.openModal = modal.open.bind(modal);
+                window.closeModal = modal.close.bind(modal);
+
+
+        </script>
+
 	</body>
 </html>

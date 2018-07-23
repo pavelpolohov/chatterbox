@@ -161,6 +161,15 @@ class WebChat(Namespace):
                 # append to room users array
                 room_lists[message['room']]['users'].append(user)
 
+                # tell the frontend that this is the message for joining the room
+                # open chat with id rooms_roomName
+                emit('message_response', {
+                    'type': 'open_room',
+                    'data': {
+                        'room': message['room'],
+                    },
+                })
+
                 # tell the existing users that there is new user joining the room
                 emit('feed_response', {
                     'type': 'new_joined_users',
@@ -178,14 +187,7 @@ class WebChat(Namespace):
                     'data': room_lists
                 }, broadcast=True)
 
-                # tell the frontend that this is the message for joining the room
-                # open chat with id rooms_roomName
-                emit('message_response', {
-                    'type': 'open_room',
-                    'data': {
-                        'room': message['room'],
-                    },
-                })
+
 
     def on_close_room(self, message):
         user = get_username(request.sid)

@@ -26,23 +26,35 @@
 			</div>
 		</div>
 
-		<script type="text/javascript" src="{{url_for('static', filename='js/jquery.3-1-1.min.js')}}"></script>
-		<script type="text/javascript" src="{{url_for('static', filename='js/bootstrap.js')}}"></script>
-		<script type="text/javascript" src="{{url_for('static', filename='js/bootstrap.min.js')}}"></script>
 		<script type="text/javascript">
-			$(document).ready(function(){
-				$('form#login').submit(function(event){
-					var url_check = "{{url_for('index')}}check/" + $('#username').val();
-					$.get(url_check, function(data){
-						if (data != 0) {
-							alert('Please use another username');
-						} else {
-							window.location.href = "{{url_for('index')}}" + $('#username').val();
-						}
-					});
-					return false;
-				});
-			});
+            function ready(fn) {
+              if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading"){
+                fn();
+              } else {
+                document.addEventListener('DOMContentLoaded', fn);
+              }
+            }
+            ready(function(){
+                document.querySelector('form#login').onsubmit = function(){
+					var url_check = "{{url_for('index')}}check/" + document.querySelector('#username').value;
+
+
+					fetch(url_check)
+                      .then(function(response) {
+                        return response.json();
+                      })
+                      .then(function(data) {
+                        console.log(data);
+                        if (data != 0) {
+                                alert('Please use another username');
+                            } else {
+                                window.location.href = "{{url_for('index')}}" + document.querySelector('#username').value;
+                            }
+                      });
+
+                    return false;
+                };})
+
 		</script>
 	</body>
 </html>
