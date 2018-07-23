@@ -98,17 +98,6 @@ class WebChat(Namespace):
             }
         }, room=room_name)
 
-    def on_close_chat(self, message):
-        user = get_username(request.sid)
-        if message['user'] in all_chat[user]:
-            emit('message_response', {
-                'type': 'private_close',
-                'message': '',
-                'data': {
-                    'user': message['user']
-                }
-            })
-            all_chat[user].remove(message['user'])
 
     def on_create_room(self, message):
         # If the room is not exist, append new room to rooms object, also set the admin and initial user
@@ -277,13 +266,6 @@ class WebChat(Namespace):
                             'room': 'rooms_{0}'.format(room)
                         })
 
-                # broadcast to all chat friend that the user is disconnecting
-                for friend in all_chat[user]:
-                    self.on_private_send({
-                        'friend': friend,
-                        'text': '{0} is offline'.format(user),
-                        'act': 'disconnect',
-                    })
 
                 # remove user chat state
                 all_chat.pop(user)

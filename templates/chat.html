@@ -158,9 +158,9 @@
 						var user_list = '';
 						for(var key of Object.keys(msg.data.users)){
 						    if (key == my_username) {
-								user_list += '<tr><td><a href="#"><span class="glyphicon glyphicon-user"></span> '+ key +' (You)</td></tr>';
+								user_list += '<tr><td><a href="" class="user-list" ><span class="glyphicon glyphicon-user"></span> '+ key +' (You)</td></tr>';
 							} else {
-								user_list += '<tr><td><a href="#" class="user-list" data-id="'+key+'"><span class="glyphicon glyphicon-user"></span> '+ key +' </td></tr>';
+								user_list += '<tr><td><a href="" class="user-list" data-id="'+key+'"><span class="glyphicon glyphicon-user"></span> '+ key +' </td></tr>';
 							}
                         }
 
@@ -179,7 +179,7 @@
 								}
 
 							}
-							room_list += '<tr><td><a class="room_list" data-id="'+key+'" href="#"><span class="glyphicon glyphicon-comment"></span> '+ key +' ('+ msg.data.rooms[key].users.length  +') </td><td>'+join_button+'</td></tr>';
+							room_list += '<tr><td><a class="room_list" data-id="'+key+'" href=""><span class="glyphicon glyphicon-comment"></span> '+ key +' ('+ msg.data.rooms[key].users.length  +') </td><td>'+join_button+'</td></tr>';
 
                         }
 
@@ -206,7 +206,7 @@
 									}
 
 								}
-								room_list += '<tr><td><a class="room_list" data-id="'+key+'" href="#"><span class="glyphicon glyphicon-comment"></span> '+ key +' ('+ msg.data[key].users.length +') </td><td>'+join_button+'</td></tr>';
+								room_list += '<tr><td><a class="room_list" data-id="'+key+'" href=""><span class="glyphicon glyphicon-comment"></span> '+ key +' ('+ msg.data[key].users.length +') </td><td>'+join_button+'</td></tr>';
 
                             }
 
@@ -216,9 +216,9 @@
 							for(var key of Object.keys(msg.data)){
 							    var value = msg.data[key];
 							    if (value == my_username) {
-									room_user_list += '<tr><td><a href="#"><span class="glyphicon glyphicon-user"></span> '+ value +' (You)</td></tr>';
+									room_user_list += '<tr><td><a href="" class="user-list"><span class="glyphicon glyphicon-user"></span> '+ value +' (You)</td></tr>';
 								} else {
-									room_user_list += '<tr><td><a href="#" class="user-list" data-id="'+value+'"><span class="glyphicon glyphicon-user"></span> '+ value +' </td></tr>';
+									room_user_list += '<tr><td><a href="" class="user-list" data-id="'+value+'"><span class="glyphicon glyphicon-user"></span> '+ value +' </td></tr>';
 								}
 
                             }
@@ -307,7 +307,12 @@
 	                		document.querySelector('#rooms_'+my_username+'_'+msg.data.room).insertAdjacentHTML('beforeend',received_message);
 						} else if (msg.type == 'room_feed') {
 							var received_message = '<div class="clearfix" style="height: 33px;"><blockquote class="me" style="text-align: center; font-size: 10px; font-style: italic; background-colour: rgb(244, 66, 155); border-right: 3px solid #f4429b !important; border-left: 3px solid #f4429b !important;">'+msg.data.text+'</blockquote></div>';
-	                		document.querySelector('#rooms_'+my_username+'_'+msg.data.room).insertAdjacentHTML('beforeend',received_message);
+	                		try{
+	                		    document.querySelector('#rooms_'+my_username+'_'+msg.data.room).insertAdjacentHTML('beforeend',received_message);
+                            } catch( e){
+
+                            }
+
 						}
 					}
 				})
@@ -339,6 +344,7 @@
                 document.querySelector('#rooms').addEventListener('click', function(){
                     if (event.target.classList.contains('room_list')) {
                         // Do something
+                        event.preventDefault();
                         var room_name = event.target.dataset.id;
                         console.log(room_name);
                         socket.emit('get_room_users', {room: room_name});
@@ -361,14 +367,16 @@
 
                 });
 
+                document.querySelector('#room_users').addEventListener('click', function(){
+                    if (event.target.classList.contains('user-list')){
+                        event.preventDefault();
+
+                    }
+                    return false;
+                });
+
                 document.querySelector('#chat').addEventListener('click', function(){
-                    if (event.target.classList.contains('close-chat')){
-                         // event when close chat
-                        var user_name = event.target.dataset.id;
-                        document.querySelector('#'+user_name).remove();
-                        socket.emit('close_chat', {user: user_name});
-                        return false;
-                    } else if (event.target.classList.contains('close-room')){
+                    if (event.target.classList.contains('close-room')){
                         	// event when close room
                         var room_name = event.target.dataset.id;
                         document.querySelector('#'+room_name).remove();
