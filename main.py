@@ -2,10 +2,12 @@
 
 from flask import Flask, render_template, session, request, redirect, url_for
 from flask_socketio import SocketIO, Namespace, emit, disconnect, join_room, rooms, leave_room, close_room
+from flask_cors import CORS
 
 async_mode = None
 
 app = Flask(__name__, static_url_path='/static')
+CORS(app)
 app.config['SECRET_KEY'] = "s3cr3t!"
 
 socketio = SocketIO(app, async_mode=async_mode)
