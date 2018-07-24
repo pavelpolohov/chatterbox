@@ -36,8 +36,7 @@ def get_username(sid):
 
 @app.route('/')
 def index():
-    exists = request.args.get('exists', 0)
-    return render_template('index.html', exists=exists)
+    return render_template('index.html')
 
 
 @app.route('/check/<string:username>')
@@ -72,8 +71,6 @@ class WebChat(Namespace):
         # Register user to the lists
         users[message['user']] = request.sid
 
-
-
         # Broadcast that there is user is connected
         emit('user_response', {
             'type': 'connect',
@@ -98,7 +95,6 @@ class WebChat(Namespace):
                 'from': user,
             }
         }, room=room_name)
-
 
     def on_create_room(self, message):
         # If the room is not exist, append new room to rooms object, also set the admin and initial user
