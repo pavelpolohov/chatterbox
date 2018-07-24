@@ -39,7 +39,9 @@
 					var url_check = "{{url_for('index')}}check/" + document.querySelector('#username').value;
 
 
-					fetch(url_check)
+					fetch(url_check,{
+                      credentials: 'include'
+                    })
                       .then(function(response) {
                         return response.json();
                       })

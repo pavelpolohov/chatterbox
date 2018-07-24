@@ -137,7 +137,9 @@
 				// function to check room is exist or not
 				function check_room(room_name) {
 					var check_room_url = base_url + "/check/room/" + room_name;
-					fetch(check_room_url)
+					fetch(check_room_url, {
+                          credentials: 'include'
+                        })
                         .then(function(response) {
                         return response.json();
                          })
